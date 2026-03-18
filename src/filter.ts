@@ -1,0 +1,162 @@
+import type { RawItem, RawTweet, ThreadTweet, FilteredTweet, FilterResult } from "./types";
+
+export function isYymmddPrefix(text: string): boolean {
+  return /^\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/.test(text);
+}
+
+export function loadJsOrJson(raw: string, filename: string): RawItem[] {
+  if (filename.endsWith(".js")) {
+    const match = raw.match(/=\s*(\[[\s\S]*\])\s*$/);
+    if (!match) throw new Error("JS 파일에서 배열을 찾을 수 없습니다.");
+    return JSON.parse(match[1]) as RawItem[];
+  }
+  return JSON.parse(raw) as RawItem[];
+}
+
+export function extractUsername(data: RawItem[]): string | null {
+  // 1) media expanded_url 패턴
+  const counts: Record<string, number> = {};
+  for (const item of data) {
+    const tweet = item.tweet;
+    for (const m of tweet.entities?.media ?? []) {
+      const url = m.expanded_url ?? "";
+      const match = url.match(/(?:twitter|x)\.com\/([^/]+)\/status\//);
+      if (match) {
+        const name = match[1].toLowerCase();
+        counts[name] = (counts[name] ?? 0) + 1;
+      }
+    }
+  }
+  if (Object.keys(counts).length) {
+    return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  // 2) in_reply_to_screen_name 빈도
+  const repCounts: Record<string, number> = {};
+  for (const item of data) {
+    const name = item.tweet.in_reply_to_screen_name;
+    if (name) repCounts[name] = (repCounts[name] ?? 0) + 1;
+  }
+  if (Object.keys(repCounts).length) {
+    return Object.entries(repCounts).sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  return null;
+}
+
+function extractFields(tweet: RawTweet, username: string, includeUrl: true): FilteredTweet;
+function extractFields(tweet: RawTweet, username: string, includeUrl?: false): ThreadTweet;
+function extractFields(
+  tweet: RawTweet,
+  username: string,
+  includeUrl = false,
+): ThreadTweet | FilteredTweet {
+  const mediaUrls = (tweet.entities?.media ?? []).map((m) => m.media_url_https);
+  const base: ThreadTweet = {
+    full_text: tweet.full_text,
+    created_at: tweet.created_at,
+    media_urls: mediaUrls,
+  };
+  if (includeUrl) {
+    return { ...base, url: `https://x.com/${username}/status/${tweet.id}`, threads: [] };
+  }
+  return base;
+}
+
+function collectThread(
+  rootId: string,
+  replyMap: Map<string, string[]>,
+  idToItem: Map<string, RawItem>,
+  username: string,
+): ThreadTweet[] {
+  const threadIds: string[] = [];
+  const queue = [rootId];
+  while (queue.length) {
+    const currentId = queue.shift()!;
+    for (const childId of replyMap.get(currentId) ?? []) {
+      threadIds.push(childId);
+      queue.push(childId);
+    }
+  }
+  const threadTweets = threadIds
+    .filter((tid) => idToItem.has(tid))
+    .map((tid) => idToItem.get(tid)!.tweet);
+  threadTweets.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  return threadTweets.map((t) => extractFields(t, username));
+}
+
+const YIELD_INTERVAL = 5000;
+
+export async function filterTweets(
+  data: RawItem[],
+  username: string,
+  onProgress: (ratio: number) => void,
+): Promise<FilterResult> {
+  const idToItem = new Map<string, RawItem>();
+  for (const item of data) {
+    idToItem.set(item.tweet.id, item);
+  }
+
+  // reply map
+  const replyMap = new Map<string, string[]>();
+  for (const [tweetId, item] of idToItem) {
+    const parentId = item.tweet.in_reply_to_status_id;
+    if (parentId) {
+      if (!replyMap.has(parentId)) replyMap.set(parentId, []);
+      replyMap.get(parentId)!.push(tweetId);
+    }
+  }
+
+  const hasMedia = (tweet: RawTweet) => (tweet.entities?.media?.length ?? 0) > 0;
+
+  // root IDs
+  const rootIds = new Set<string>();
+  let i = 0;
+  for (const [tweetId, item] of idToItem) {
+    const tweet = item.tweet;
+    const isYymmdd = isYymmddPrefix(tweet.full_text ?? "");
+    const isStandalone = !tweet.in_reply_to_status_id;
+    const hasThread = replyMap.has(tweetId);
+    if (isYymmdd || (isStandalone && hasMedia(tweet) && hasThread)) {
+      rootIds.add(tweetId);
+    }
+    i++;
+    if (i % YIELD_INTERVAL === 0) {
+      onProgress((i / data.length) * 0.5);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+
+  // sort roots
+  const rootTweets = [...rootIds]
+    .map((rid) => idToItem.get(rid)!.tweet)
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  const result: FilteredTweet[] = [];
+  let totalThreadCount = 0;
+  let j = 0;
+  for (const rootTweet of rootTweets) {
+    const threads = collectThread(rootTweet.id, replyMap, idToItem, username);
+    if (!isYymmddPrefix(rootTweet.full_text ?? "") && threads.length < 2) {
+      j++;
+      continue;
+    }
+    totalThreadCount += threads.length;
+    const item = extractFields(rootTweet, username, true);
+    item.threads = threads;
+    result.push(item);
+    j++;
+    if (j % 100 === 0) {
+      onProgress(0.5 + (j / rootTweets.length) * 0.5);
+      await new Promise((r) => setTimeout(r, 0));
+    }
+  }
+
+  return {
+    result,
+    totalCount: data.length,
+    rootCount: rootIds.size,
+    threadCount: totalThreadCount,
+    username,
+  };
+}
