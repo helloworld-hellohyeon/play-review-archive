@@ -31,6 +31,12 @@ export interface FilteredTweet extends ThreadTweet {
   threads: ThreadTweet[];
 }
 
+export interface FilterOptions {
+  datePrefix: boolean;
+  photoWithThread: boolean;
+  keyword: string;
+}
+
 export interface FilterResult {
   result: FilteredTweet[];
   totalCount: number;

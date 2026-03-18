@@ -1,4 +1,4 @@
-import type { FilteredTweet, ThreadTweet } from "./types";
+import type { FilteredTweet, ThreadTweet } from "../types";
 
 /** "Mon Jan 01 00:00:00 +0000 2026" → "2026-01-01 00:00:00" */
 export function formatDate(createdAt: string): string {

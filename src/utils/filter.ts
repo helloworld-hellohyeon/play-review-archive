@@ -1,4 +1,11 @@
-import type { RawItem, RawTweet, ThreadTweet, FilteredTweet, FilterResult } from "./types";
+import type {
+  RawItem,
+  RawTweet,
+  ThreadTweet,
+  FilteredTweet,
+  FilterResult,
+  FilterOptions,
+} from "../types";
 
 export function isYymmddPrefix(text: string): boolean {
   return /^\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/.test(text);
@@ -90,6 +97,7 @@ const YIELD_INTERVAL = 5000;
 export async function filterTweets(
   data: RawItem[],
   username: string,
+  options: FilterOptions,
   onProgress: (ratio: number) => void,
 ): Promise<FilterResult> {
   const idToItem = new Map<string, RawItem>();
@@ -109,16 +117,27 @@ export async function filterTweets(
 
   const hasMedia = (tweet: RawTweet) => (tweet.entities?.media?.length ?? 0) > 0;
 
-  // root IDs
+  // root IDs — protectedRoots: matched by condition 1 or 3 (no thread-count limit)
   const rootIds = new Set<string>();
+  const protectedRoots = new Set<string>();
   let i = 0;
   for (const [tweetId, item] of idToItem) {
     const tweet = item.tweet;
-    const isYymmdd = isYymmddPrefix(tweet.full_text ?? "");
+    const text = tweet.full_text ?? "";
     const isStandalone = !tweet.in_reply_to_status_id;
     const hasThread = replyMap.has(tweetId);
-    if (isYymmdd || (isStandalone && hasMedia(tweet) && hasThread)) {
+
+    const matchDatePrefix = options.datePrefix && isYymmddPrefix(text);
+    const matchPhotoThread =
+      options.photoWithThread && isStandalone && hasMedia(tweet) && hasThread;
+    const matchKeyword =
+      options.keyword !== "" && text.toLowerCase().includes(options.keyword.toLowerCase());
+
+    if (matchDatePrefix || matchPhotoThread || matchKeyword) {
       rootIds.add(tweetId);
+    }
+    if (matchDatePrefix || matchKeyword) {
+      protectedRoots.add(tweetId);
     }
     i++;
     if (i % YIELD_INTERVAL === 0) {
@@ -137,7 +156,8 @@ export async function filterTweets(
   let j = 0;
   for (const rootTweet of rootTweets) {
     const threads = collectThread(rootTweet.id, replyMap, idToItem, username);
-    if (!isYymmddPrefix(rootTweet.full_text ?? "") && threads.length < 2) {
+    // apply thread-count limit only for condition 2 exclusive matches
+    if (!protectedRoots.has(rootTweet.id) && threads.length < 2) {
       j++;
       continue;
     }

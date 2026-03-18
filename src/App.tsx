@@ -1,11 +1,13 @@
 import { useCallback, useRef, useState } from "react";
-import { filterTweets, extractUsername, loadJsOrJson } from "./filter";
-import { buildZip } from "./archive";
-import type { FilterResult } from "./types";
+import { filterTweets, loadJsOrJson } from "./utils/filter";
+import { buildZip } from "./utils/archive";
+import type { FilterOptions, FilterResult } from "./types";
 import { DropZone } from "./components/DropZone";
+import { FilterPanel } from "./components/FilterPanel";
+import { HowToUse } from "./components/HowToUse";
 import { ProgressBar } from "./components/ProgressBar";
 import { StatsPanel } from "./components/StatsPanel";
-import "./App.css";
+import "./static/App.css";
 
 type Phase = "idle" | "filtering" | "zipping" | "done" | "error";
 
@@ -16,9 +18,19 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState("");
   const [stats, setStats] = useState<FilterResult | null>(null);
   const [manualUsername, setManualUsername] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
+    datePrefix: true,
+    photoWithThread: true,
+    keyword: "",
+  });
   const zipBlobRef = useRef<Blob | null>(null);
 
-  const handleFile = useCallback(
+  const hasFilterCondition =
+    filterOptions.datePrefix || filterOptions.photoWithThread || filterOptions.keyword !== "";
+  const canStart = pendingFile !== null && manualUsername.trim() !== "" && hasFilterCondition;
+
+  const processFile = useCallback(
     async (file: File) => {
       setPhase("filtering");
       setProgress(0);
@@ -47,14 +59,13 @@ export default function App() {
         setProgressLabel("유저네임 감지 중...");
         await tick();
 
-        const detected = extractUsername(data);
-        const username = detected ?? (manualUsername.trim() || "unknown");
+        const username = manualUsername.trim();
 
         setProgress(0.15);
         setProgressLabel(`필터링 중... (유저: ${username})`);
         await tick();
 
-        const result = await filterTweets(data, username, (ratio) => {
+        const result = await filterTweets(data, username, filterOptions, (ratio) => {
           setProgress(0.15 + ratio * 0.5);
           setProgressLabel("필터링 중...");
         });
@@ -84,8 +95,12 @@ export default function App() {
         setPhase("error");
       }
     },
-    [manualUsername],
+    [manualUsername, filterOptions],
   );
+
+  const handleStart = () => {
+    if (pendingFile && canStart) processFile(pendingFile);
+  };
 
   const handleDownload = () => {
     const blob = zipBlobRef.current;
@@ -107,6 +122,7 @@ export default function App() {
     setProgress(0);
     setErrorMsg("");
     setManualUsername("");
+    setPendingFile(null);
   };
 
   const isIdle = phase === "idle" || phase === "error";
@@ -114,14 +130,25 @@ export default function App() {
 
   return (
     <div className="container">
-      <h1>Tweet Thread Filter</h1>
+      <div>
+        <h2>필터링된 스레드를 폴더와 텍스트로 아카이브해요</h2>
+        <h1>이매지너리 🧩</h1>
+      </div>
 
       {isIdle && (
-        <DropZone
-          onFile={handleFile}
-          username={manualUsername}
-          onUsernameChange={setManualUsername}
-        />
+        <>
+          <DropZone
+            onFile={setPendingFile}
+            file={pendingFile}
+            username={manualUsername}
+            onUsernameChange={setManualUsername}
+          />
+          <FilterPanel options={filterOptions} onChange={setFilterOptions} />
+          <button className="start-btn" disabled={!canStart} onClick={handleStart}>
+            아카이브 시작
+          </button>
+          <HowToUse />
+        </>
       )}
 
       {isIdle && phase === "error" && <div className="error-box">{errorMsg}</div>}

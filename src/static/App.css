@@ -1,0 +1,414 @@
+@import url("https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/subsets/Paperlogy-dynamic-subset.css");
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family:
+    "Paperlogy",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    "Open Sans",
+    "Helvetica Neue",
+    sans-serif;
+}
+
+body {
+  background: #0f1117;
+  color: #e2e8f0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  scrollbar-gutter: stable;
+  /* 익스플로러 스크롤바 옵션 */
+  -ms-overflow-style: none;
+  /* 파이어폭스 스크롤바 옵션 */
+  scrollbar-width: none;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+h1 {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #f8fafc;
+  text-align: center;
+  margin-top: 8px;
+}
+
+h2 {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #f8fafc;
+  text-align: center;
+}
+
+/* Drop zone */
+.drop-zone {
+  border: 2px dashed #334155;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+  user-select: none;
+}
+
+.drop-zone:hover,
+.drop-zone.dragover {
+  border-color: #3b82f6;
+  background: #1e293b;
+}
+
+.drop-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.drop-text {
+  color: #94a3b8;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.drop-text strong {
+  color: #cbd5e1;
+}
+
+/* Field */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.input-prefix-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-prefix {
+  position: absolute;
+  left: 0.9rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  pointer-events: none;
+  user-select: none;
+}
+
+.input-prefix-wrap input[type="text"] {
+  padding-left: 2.4rem;
+}
+
+label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+input[type="text"] {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  color: #e2e8f0;
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus {
+  border-color: #3b82f6;
+}
+
+input[type="text"]::placeholder {
+  color: #475569;
+}
+
+/* Progress */
+.progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-label {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.progress-bg {
+  background: #1e293b;
+  border-radius: 999px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  background: #3b82f6;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.1s;
+}
+
+/* How To Use */
+.how-to-use {
+  border: 1px solid #334155;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.how-to-use-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+
+.how-to-use-toggle:hover {
+  color: #cbd5e1;
+  background: #1e293b;
+}
+
+.how-to-use-arrow {
+  display: inline-block;
+  transition: transform 0.2s;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.how-to-use-arrow.open {
+  transform: rotate(180deg);
+}
+
+.how-to-use-body {
+  padding: 0.75rem 1.25rem 1rem 2.25rem;
+  border-top: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  color: #94a3b8;
+  line-height: 1.6;
+}
+
+.how-to-use-sub {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+.how-to-use-body code {
+  background: #1e293b;
+  border-radius: 4px;
+  padding: 0.1em 0.4em;
+  font-size: 0.85em;
+  color: #93c5fd;
+}
+
+/* Error */
+.error-box {
+  background: #2d1b1b;
+  border: 1px solid #7f1d1d;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: #fca5a5;
+}
+
+/* Stats */
+.stats-panel {
+  display: flex;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  gap: 1rem;
+}
+
+.stat {
+  flex: 1;
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #f8fafc;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.stat-divider {
+  width: 1px;
+  background: #334155;
+  align-self: stretch;
+}
+
+/* Filter Panel */
+.filter-panel {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.filter-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.1rem;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  flex-wrap: wrap;
+}
+
+.filter-row input[type="checkbox"],
+.filter-row-inline input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #3b82f6;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filter-keyword {
+  flex-basis: auto !important;
+  flex: 1;
+  min-width: 120px;
+  background: #0f1117;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  padding: 0.3rem 0.6rem;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filter-keyword:focus {
+  border-color: #3b82f6;
+}
+
+.filter-keyword::placeholder {
+  color: #475569;
+}
+
+/* Buttons */
+.start-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.start-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.download-btn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  background: #3b82f6;
+  color: white;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.download-btn:hover {
+  background: #2563eb;
+}
+
+.reset-btn {
+  width: 100%;
+  padding: 0.65rem;
+  background: transparent;
+  color: #64748b;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.reset-btn:hover {
+  color: #94a3b8;
+  border-color: #475569;
+}

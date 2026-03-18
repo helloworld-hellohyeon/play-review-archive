@@ -1,5 +1,5 @@
 import { zip, strToU8 } from "fflate";
-import type { FilteredTweet } from "./types";
+import type { FilteredTweet } from "../types";
 import { buildTxt } from "./format";
 import { fetchImage, imageFilename } from "./imageUtils";
 
