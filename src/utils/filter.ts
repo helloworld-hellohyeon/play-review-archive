@@ -92,7 +92,7 @@ function collectThread(
   return threadTweets.map((t) => extractFields(t, username));
 }
 
-const YIELD_INTERVAL = 5000;
+const YIELD_INTERVAL = 15000;
 
 export async function filterTweets(
   data: RawItem[],
@@ -135,11 +135,16 @@ export async function filterTweets(
     const isStandalone = !tweet.in_reply_to_status_id;
     const hasThread = replyMap.has(tweetId);
 
-    const matchDatePrefix = options.datePrefix && isYymmddPrefix(text);
+    // 부모가 데이터셋에 존재하는 리플은 루트가 될 수 없음 (부모 스레드에 포함됨)
+    const parentExists = tweet.in_reply_to_status_id
+      ? idToItem.has(tweet.in_reply_to_status_id)
+      : false;
+
+    const matchDatePrefix = options.datePrefix && isYymmddPrefix(text) && !parentExists;
     const matchPhotoThread =
       options.photoWithThread && isStandalone && hasMedia(tweet) && hasThread;
     const matchKeyword =
-      options.keyword !== "" && text.toLowerCase().includes(options.keyword.toLowerCase());
+      options.keyword !== "" && text.toLowerCase().includes(options.keyword.toLowerCase()) && !parentExists;
 
     if (matchDatePrefix || matchPhotoThread || matchKeyword) {
       rootIds.add(tweetId);
