@@ -80,8 +80,9 @@ function collectThread(
 ): ThreadTweet[] {
   const threadIds: string[] = [];
   const queue = [rootId];
-  while (queue.length) {
-    const currentId = queue.shift()!;
+  let qi = 0;
+  while (qi < queue.length) {
+    const currentId = queue[qi++];
     for (const childId of replyMap.get(currentId) ?? []) {
       threadIds.push(childId);
       queue.push(childId);
@@ -90,7 +91,7 @@ function collectThread(
   const threadTweets = threadIds
     .filter((tid) => idToItem.has(tid))
     .map((tid) => idToItem.get(tid)!.tweet);
-  threadTweets.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  threadTweets.sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
   return threadTweets.map((t) => extractFields(t, username));
 }
 
@@ -128,6 +129,11 @@ export async function filterTweets(
   const hasMedia = (tweet: RawTweet) =>
     ((tweet.extended_entities?.media ?? tweet.entities?.media)?.length ?? 0) > 0;
 
+  const keywords = options.keyword
+    .split(",")
+    .map((k) => k.trim().toLowerCase())
+    .filter(Boolean);
+
   // root IDs — protectedRoots: matched by condition 1 or 3 (no thread-count limit)
   const rootIds = new Set<string>();
   const protectedRoots = new Set<string>();
@@ -146,14 +152,9 @@ export async function filterTweets(
     const matchDatePrefix = options.datePrefix && isYymmddPrefix(text) && !parentExists;
     const matchPhotoThread =
       options.photoWithThread && isStandalone && hasMedia(tweet) && hasThread;
-    const keywords = options.keyword
-      .split(",")
-      .map((k) => k.trim().toLowerCase())
-      .filter(Boolean);
+    const textLower = keywords.length > 0 ? text.toLowerCase() : "";
     const matchKeyword =
-      keywords.length > 0 &&
-      keywords.some((kw) => text.toLowerCase().includes(kw)) &&
-      !parentExists;
+      keywords.length > 0 && keywords.some((kw) => textLower.includes(kw)) && !parentExists;
 
     if (matchDatePrefix || matchPhotoThread || matchKeyword) {
       rootIds.add(tweetId);
@@ -171,7 +172,7 @@ export async function filterTweets(
   // sort roots
   const rootTweets = [...rootIds]
     .map((rid) => idToItem.get(rid)!.tweet)
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    .sort((a, b) => Date.parse(a.created_at) - Date.parse(b.created_at));
 
   const result: FilteredTweet[] = [];
   let totalThreadCount = 0;
