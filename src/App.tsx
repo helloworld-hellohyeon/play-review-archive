@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FilterOptions, FilterResult } from "./types";
 import { GlobalStyle } from "./styles/GlobalStyle";
 import { Container } from "./components/Layout";
+import { Footer } from "./components/Footer";
 import { Intro } from "./components/steps/Intro";
 import { Processing } from "./components/steps/Processing";
 import { Review } from "./components/steps/Review";
@@ -49,6 +50,7 @@ export default function App() {
   return (
     <>
       <GlobalStyle />
+      <Footer />
       <Container>
         {(phase === "idle" || phase === "error") && (
           <Intro onStart={handleStart} errorMsg={errorMsg} initialFilterOptions={lastFilterOptions ?? undefined} />
