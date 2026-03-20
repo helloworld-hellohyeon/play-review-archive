@@ -22,7 +22,7 @@ const Stat = styled.div`
 `;
 
 const StatValue = styled.div`
-  font-size: ${theme.fontSizes.xl};
+  font-size: ${theme.fontSizes.xxl};
   font-weight: 700;
   color: ${theme.colors.textStrong};
   line-height: 1.1;

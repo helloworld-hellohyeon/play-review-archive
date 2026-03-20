@@ -1,6 +1,7 @@
 import { useState } from "react";
 import styled from "@emotion/styled";
 import { theme } from "../styles/theme";
+import { Code } from "./Layout";
 
 const Wrapper = styled.div`
   border: 1px solid ${theme.colors.border};
@@ -54,13 +55,6 @@ const Sub = styled.span`
   color: ${theme.colors.textSubtle};
 `;
 
-const Code = styled.code`
-  background: ${theme.colors.surface};
-  border-radius: 4px;
-  padding: 0.1em 0.4em;
-  font-size: 0.85em;
-  color: ${theme.colors.code};
-`;
 
 export function HowToUse() {
   const [open, setOpen] = useState(false);

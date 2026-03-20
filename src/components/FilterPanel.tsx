@@ -46,12 +46,12 @@ const Checkbox = styled.input`
 `;
 
 const KeywordInput = styled.input`
-  flex: 1;
-  min-width: 120px;
+  width: 100%;
+  margin-top: 0.5rem;
   background: ${theme.colors.bg};
   border: 1px solid ${theme.colors.border};
   border-radius: ${theme.radii.sm};
-  padding: 0.3rem 0.6rem;
+  padding: 0.8rem 0.6rem;
   color: ${theme.colors.text};
   font-size: ${theme.fontSizes.body};
   outline: none;

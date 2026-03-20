@@ -28,8 +28,9 @@ export const theme = {
     body: "0.9rem",
     md: "0.95rem",
     lg: "1rem",
-    xl: "1.8rem",
-    "2xl": "3rem",
+    xl: "1.5rem",
+    xxl: "1.8rem",
+    xxxl: "3rem",
   },
 } as const;
 

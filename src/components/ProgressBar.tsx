@@ -10,6 +10,7 @@ const Section = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  margin-top: 24px;
 `;
 
 const Label = styled.div`
