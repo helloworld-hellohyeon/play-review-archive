@@ -58,7 +58,9 @@ function extractFields(
   username: string,
   includeUrl = false,
 ): ThreadTweet | FilteredTweet {
-  const mediaUrls = (tweet.extended_entities?.media ?? tweet.entities?.media ?? []).map((m) => m.media_url_https);
+  const mediaUrls = (tweet.extended_entities?.media ?? tweet.entities?.media ?? []).map(
+    (m) => m.media_url_https,
+  );
   const base: ThreadTweet = {
     full_text: tweet.full_text,
     created_at: tweet.created_at,
@@ -123,7 +125,8 @@ export async function filterTweets(
     }
   }
 
-  const hasMedia = (tweet: RawTweet) => ((tweet.extended_entities?.media ?? tweet.entities?.media)?.length ?? 0) > 0;
+  const hasMedia = (tweet: RawTweet) =>
+    ((tweet.extended_entities?.media ?? tweet.entities?.media)?.length ?? 0) > 0;
 
   // root IDs — protectedRoots: matched by condition 1 or 3 (no thread-count limit)
   const rootIds = new Set<string>();
@@ -143,8 +146,14 @@ export async function filterTweets(
     const matchDatePrefix = options.datePrefix && isYymmddPrefix(text) && !parentExists;
     const matchPhotoThread =
       options.photoWithThread && isStandalone && hasMedia(tweet) && hasThread;
+    const keywords = options.keyword
+      .split(",")
+      .map((k) => k.trim().toLowerCase())
+      .filter(Boolean);
     const matchKeyword =
-      options.keyword !== "" && text.toLowerCase().includes(options.keyword.toLowerCase()) && !parentExists;
+      keywords.length > 0 &&
+      keywords.some((kw) => text.toLowerCase().includes(kw)) &&
+      !parentExists;
 
     if (matchDatePrefix || matchPhotoThread || matchKeyword) {
       rootIds.add(tweetId);

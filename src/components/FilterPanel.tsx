@@ -118,7 +118,7 @@ export function FilterPanel({ options, onChange }: Props) {
           {keywordEnabled && (
             <KeywordInput
               type="text"
-              placeholder="키워드 입력"
+              placeholder="키워드 입력 (쉼표로 구분)"
               value={options.keyword}
               onChange={(e) => set({ keyword: e.target.value })}
             />
