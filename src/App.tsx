@@ -4,9 +4,9 @@ import { GlobalStyle } from "./styles/GlobalStyle";
 import { Container } from "./components/Layout";
 import { Intro } from "./components/steps/Intro";
 import { Processing } from "./components/steps/Processing";
-import { Result } from "./components/steps/Result";
+import { Review } from "./components/steps/Review";
 
-type Phase = "idle" | "processing" | "done" | "error";
+type Phase = "idle" | "processing" | "review" | "error";
 
 interface IntroData {
   files: File[];
@@ -14,27 +14,24 @@ interface IntroData {
   filterOptions: FilterOptions;
 }
 
-interface ResultData {
-  stats: FilterResult;
-  zip: Blob;
-}
-
 export default function App() {
   const [phase, setPhase] = useState<Phase>("idle");
   const [introData, setIntroData] = useState<IntroData | null>(null);
-  const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [filterResult, setFilterResult] = useState<FilterResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [lastFilterOptions, setLastFilterOptions] = useState<FilterOptions | null>(null);
 
   const handleStart = (files: File[], username: string, filterOptions: FilterOptions) => {
     setIntroData({ files, username, filterOptions });
-    setResultData(null);
+    setLastFilterOptions(filterOptions);
+    setFilterResult(null);
     setErrorMsg("");
     setPhase("processing");
   };
 
-  const handleDone = (stats: FilterResult, zip: Blob) => {
-    setResultData({ stats, zip });
-    setPhase("done");
+  const handleDone = (stats: FilterResult) => {
+    setFilterResult(stats);
+    setPhase("review");
   };
 
   const handleError = (msg: string) => {
@@ -44,7 +41,7 @@ export default function App() {
 
   const handleReset = () => {
     setIntroData(null);
-    setResultData(null);
+    setFilterResult(null);
     setErrorMsg("");
     setPhase("idle");
   };
@@ -54,7 +51,7 @@ export default function App() {
       <GlobalStyle />
       <Container>
         {(phase === "idle" || phase === "error") && (
-          <Intro onStart={handleStart} errorMsg={errorMsg} />
+          <Intro onStart={handleStart} errorMsg={errorMsg} initialFilterOptions={lastFilterOptions ?? undefined} />
         )}
 
         {phase === "processing" && introData && (
@@ -67,11 +64,10 @@ export default function App() {
           />
         )}
 
-        {phase === "done" && resultData && introData && (
-          <Result
-            stats={resultData.stats}
+        {phase === "review" && filterResult && introData && (
+          <Review
+            stats={filterResult}
             username={introData.username}
-            zip={resultData.zip}
             onReset={handleReset}
           />
         )}

@@ -7,10 +7,6 @@ export function GlobalStyle() {
       styles={css`
         @import url("https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/subsets/Paperlogy-dynamic-subset.css");
 
-        ::-webkit-scrollbar {
-          display: none;
-        }
-
         *,
         *::before,
         *::after {

@@ -9,17 +9,16 @@ import { Header, PrimaryButton, Subtitle, Title, ErrorBox } from "../Layout";
 interface Props {
   onStart: (files: File[], username: string, filterOptions: FilterOptions) => void;
   errorMsg?: string;
+  initialFilterOptions?: FilterOptions;
 }
 
-export function Intro({ onStart, errorMsg }: Props) {
+export function Intro({ onStart, errorMsg, initialFilterOptions }: Props) {
   const [files, setFiles] = useState<File[]>([]);
   const [username, setUsername] = useState("");
   const [usernameReadOnly, setUsernameReadOnly] = useState(false);
-  const [filterOptions, setFilterOptions] = useState<FilterOptions>({
-    datePrefix: true,
-    photoWithThread: true,
-    keyword: "",
-  });
+  const [filterOptions, setFilterOptions] = useState<FilterOptions>(
+    initialFilterOptions ?? { datePrefix: true, photoWithThread: true, keyword: "" },
+  );
 
   const hasFilterCondition =
     filterOptions.datePrefix || filterOptions.photoWithThread || filterOptions.keyword !== "";

@@ -5,6 +5,7 @@ interface Props {
   totalCount: number;
   rootCount: number;
   threadCount: number;
+  selectedCount?: number;
 }
 
 const Panel = styled.div`
@@ -40,7 +41,7 @@ const Divider = styled.div`
   align-self: stretch;
 `;
 
-export function StatsPanel({ totalCount, rootCount, threadCount }: Props) {
+export function StatsPanel({ totalCount, rootCount, threadCount, selectedCount }: Props) {
   return (
     <Panel>
       <Stat>
@@ -49,8 +50,8 @@ export function StatsPanel({ totalCount, rootCount, threadCount }: Props) {
       </Stat>
       <Divider />
       <Stat>
-        <StatValue>{rootCount.toLocaleString()}</StatValue>
-        <StatLabel>루트</StatLabel>
+        <StatValue>{(selectedCount ?? rootCount).toLocaleString()}</StatValue>
+        <StatLabel>{selectedCount !== undefined ? "선택됨" : "루트"}</StatLabel>
       </Stat>
       <Divider />
       <Stat>

@@ -76,7 +76,7 @@ const KeywordInput = styled.input`
 `;
 
 export function FilterPanel({ options, onChange }: Props) {
-  const [keywordEnabled, setKeywordEnabled] = useState(false);
+  const [keywordEnabled, setKeywordEnabled] = useState(options.keyword !== "");
   const set = (patch: Partial<FilterOptions>) => onChange({ ...options, ...patch });
 
   const handleKeywordCheck = (checked: boolean) => {

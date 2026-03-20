@@ -8,7 +8,11 @@ import type {
 } from "../types";
 
 export function isYymmddPrefix(text: string): boolean {
-  return /^\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])/.test(text);
+  const sep = "[./\\-]?";
+  // yyMMdd or yyyyMMdd, with optional separator between each part
+  return new RegExp(
+    `^(\\d{4}|\\d{2})${sep}(0[1-9]|1[0-2])${sep}(0[1-9]|[12]\\d|3[01])`,
+  ).test(text);
 }
 
 export function loadJsOrJson(raw: string, filename: string): RawItem[] {
