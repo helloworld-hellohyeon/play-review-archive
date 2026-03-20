@@ -36,8 +36,8 @@ export function Footer() {
       <Divider>·</Divider>
       <span>v0.0.1 beta</span>
       <Divider>·</Divider>
-      <Link href="https://x.com/pado_in_theater" target="_blank" rel="noopener noreferrer">
-        @pado_in_theater
+      <Link href="https://x.com/mouse_collector" target="_blank" rel="noopener noreferrer">
+        @mouse_collector
       </Link>
     </FooterEl>
   );
