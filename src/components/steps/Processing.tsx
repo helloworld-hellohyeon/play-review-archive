@@ -51,11 +51,18 @@ const Sentence = styled.span`
   animation: ${fadeInOut} ${DURATION}ms ease-in-out forwards;
 `;
 
+const blink = keyframes`
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.2; }
+`;
+
 const FallbackSentence = styled.span`
   font-size: ${theme.fontSizes.xl};
   color: ${theme.colors.text};
   text-align: center;
-  animation: ${fadeIn} 600ms ease-out forwards;
+  animation:
+    ${fadeIn} 600ms ease-out forwards,
+    ${blink} 2.8s ease-in-out 600ms infinite;
 `;
 
 const FallbackDescription = styled.span`
@@ -93,21 +100,27 @@ export function Processing({ files, username, filterOptions, onDone, onError }: 
 
     async function run() {
       try {
-        const allData = [];
-        for (let fi = 0; fi < files.length; fi++) {
-          if (cancelled) return;
-          const file = files[fi];
-          setLabel(`파일 읽는 중... (${fi + 1} / ${files.length})`);
-          await tick();
-          const raw = await file.text();
-          let parsed;
-          try {
-            parsed = loadJsOrJson(raw, file.name);
-          } catch (e) {
-            throw new Error(`${file.name} 파싱 실패: ` + (e as Error).message);
-          }
-          allData.push(...parsed);
-        }
+        setLabel(`파일 읽는 중... (0 / ${files.length})`);
+        await tick();
+
+        let readCount = 0;
+        const chunks = await Promise.all(
+          files.map(async (file) => {
+            const raw = await file.text();
+            try {
+              const parsed = loadJsOrJson(raw, file.name);
+              if (!cancelled) {
+                readCount++;
+                setLabel(`파일 읽는 중... (${readCount} / ${files.length})`);
+              }
+              return parsed;
+            } catch (e) {
+              throw new Error(`${file.name} 파싱 실패: ` + (e as Error).message);
+            }
+          }),
+        );
+        if (cancelled) return;
+        const allData = chunks.flat();
 
         setProgress(0.1);
         setLabel("파싱 중...");

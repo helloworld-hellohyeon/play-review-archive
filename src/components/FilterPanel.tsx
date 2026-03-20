@@ -2,6 +2,7 @@ import { useState } from "react";
 import styled from "@emotion/styled";
 import { theme } from "../styles/theme";
 import type { FilterOptions } from "../types";
+import { Code } from "./Layout";
 
 interface Props {
   options: FilterOptions;
@@ -58,8 +59,8 @@ const KeywordInput = styled.input`
   margin-top: 0.5rem;
   background: ${theme.colors.bg};
   border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.radii.sm};
-  padding: 0.8rem 0.6rem;
+  border-radius: ${theme.radii.md};
+  padding: 0.6rem 0.9rem;
   color: ${theme.colors.text};
   font-size: ${theme.fontSizes.body};
   outline: none;
@@ -96,7 +97,9 @@ export function FilterPanel({ options, onChange }: Props) {
             checked={options.datePrefix}
             onChange={(e) => set({ datePrefix: e.target.checked })}
           />
-          <span>날짜(yyMMdd)로 시작하는 트윗</span>
+          <span>
+            날짜(<Code>yyMMdd</Code>/<Code>yyyyMMdd</Code>)로 시작하는 트윗
+          </span>
         </Row>
         <Row>
           <Checkbox
@@ -104,7 +107,7 @@ export function FilterPanel({ options, onChange }: Props) {
             checked={options.photoWithThread}
             onChange={(e) => set({ photoWithThread: e.target.checked })}
           />
-          <span>사진 있고 스레드 2개 이상</span>
+          <span>첫 트윗에 사진이 있고 스레드 2개 이상</span>
         </Row>
         <div>
           <Row>
