@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
-import { filterTweets, loadJsOrJson } from "./utils/filter";
+import styled from "@emotion/styled";
+import { filterTweets, loadJsOrJson, extractUsername } from "./utils/filter";
 import { buildZip } from "./utils/archive";
 import type { FilterOptions, FilterResult } from "./types";
 import { DropZone } from "./components/DropZone";
@@ -7,9 +8,98 @@ import { FilterPanel } from "./components/FilterPanel";
 import { HowToUse } from "./components/HowToUse";
 import { ProgressBar } from "./components/ProgressBar";
 import { StatsPanel } from "./components/StatsPanel";
-import "./static/App.css";
+import { GlobalStyle } from "./styles/GlobalStyle";
+import { theme } from "./styles/theme";
 
 type Phase = "idle" | "filtering" | "zipping" | "done" | "error";
+
+const Container = styled.div`
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`;
+
+const Header = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const Subtitle = styled.h2`
+  font-size: ${theme.fontSizes.lg};
+  font-weight: 400;
+  color: ${theme.colors.textStrong};
+  text-align: center;
+`;
+
+const Title = styled.h1`
+  font-size: ${theme.fontSizes["2xl"]};
+  font-weight: 900;
+  color: ${theme.colors.textStrong};
+  text-align: center;
+  margin-top: 8px;
+`;
+
+const PrimaryButton = styled.button`
+  display: block;
+  width: 100%;
+  padding: 0.8rem;
+  background: ${theme.colors.accent};
+  color: white;
+  border: none;
+  border-radius: ${theme.radii.md};
+  font-size: ${theme.fontSizes.md};
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
+
+  &:hover:not(:disabled) {
+    background: ${theme.colors.accentHover};
+  }
+
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+`;
+
+const DownloadButton = styled(PrimaryButton)`
+  &:disabled {
+    display: none;
+  }
+`;
+
+const ResetButton = styled.button`
+  width: 100%;
+  padding: 0.65rem;
+  background: transparent;
+  color: ${theme.colors.textSubtle};
+  border: 1px solid ${theme.colors.border};
+  border-radius: ${theme.radii.md};
+  font-size: ${theme.fontSizes.body};
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+
+  &:hover {
+    color: ${theme.colors.textMuted};
+    border-color: ${theme.colors.borderHover};
+  }
+`;
+
+const ErrorBox = styled.div`
+  background: ${theme.colors.errorBg};
+  border: 1px solid ${theme.colors.errorBorder};
+  border-radius: ${theme.radii.md};
+  padding: 0.75rem 1rem;
+  font-size: ${theme.fontSizes.body};
+  color: ${theme.colors.errorText};
+`;
 
 export default function App() {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -17,8 +107,9 @@ export default function App() {
   const [progressLabel, setProgressLabel] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [stats, setStats] = useState<FilterResult | null>(null);
-  const [manualUsername, setManualUsername] = useState("");
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [username, setUsername] = useState("");
+  const [usernameReadOnly, setUsernameReadOnly] = useState(false);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     datePrefix: true,
     photoWithThread: true,
@@ -28,10 +119,31 @@ export default function App() {
 
   const hasFilterCondition =
     filterOptions.datePrefix || filterOptions.photoWithThread || filterOptions.keyword !== "";
-  const canStart = pendingFiles.length > 0 && manualUsername.trim() !== "" && hasFilterCondition;
+  const canStart = pendingFiles.length > 0 && username.trim() !== "" && hasFilterCondition;
+
+  const handleFiles = useCallback(async (files: File[]) => {
+    setPendingFiles(files);
+    setUsername("");
+    setUsernameReadOnly(true);
+    try {
+      const allData = [];
+      for (const file of files) {
+        const raw = await file.text();
+        allData.push(...loadJsOrJson(raw, file.name));
+      }
+      const detected = extractUsername(allData);
+      if (detected) {
+        setUsername(detected);
+      } else {
+        setUsernameReadOnly(false);
+      }
+    } catch {
+      setUsernameReadOnly(false);
+    }
+  }, []);
 
   const processFile = useCallback(
-    async (files: File[]) => {
+    async (files: File[], currentUsername: string) => {
       setPhase("filtering");
       setProgress(0);
       setProgressLabel("파일 읽는 중...");
@@ -55,7 +167,7 @@ export default function App() {
         }
         const data = allData;
 
-        setProgress(0.05);
+        setProgress(0.1);
         setProgressLabel("파싱 중...");
         await tick();
 
@@ -63,17 +175,11 @@ export default function App() {
           throw new Error("유효한 트윗 배열을 찾을 수 없습니다.");
         }
 
-        setProgress(0.1);
-        setProgressLabel("유저네임 감지 중...");
-        await tick();
-
-        const username = manualUsername.trim();
-
         setProgress(0.15);
-        setProgressLabel(`필터링 중... (유저: ${username})`);
+        setProgressLabel(`필터링 중... (@${currentUsername})`);
         await tick();
 
-        const result = await filterTweets(data, username, filterOptions, (ratio) => {
+        const result = await filterTweets(data, currentUsername, filterOptions, (ratio) => {
           setProgress(0.15 + ratio * 0.5);
           setProgressLabel("필터링 중...");
         });
@@ -103,11 +209,11 @@ export default function App() {
         setPhase("error");
       }
     },
-    [manualUsername, filterOptions],
+    [filterOptions],
   );
 
   const handleStart = () => {
-    if (pendingFiles.length > 0 && canStart) processFile(pendingFiles);
+    if (canStart) processFile(pendingFiles, username.trim());
   };
 
   const handleDownload = () => {
@@ -116,7 +222,7 @@ export default function App() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "tweets_archive.zip";
+    a.download = `${username.trim()}_tweets_archive.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -129,56 +235,64 @@ export default function App() {
     setPhase("idle");
     setProgress(0);
     setErrorMsg("");
-    setManualUsername("");
     setPendingFiles([]);
+    setUsername("");
+    setUsernameReadOnly(false);
   };
 
   const isIdle = phase === "idle" || phase === "error";
   const isProcessing = phase === "filtering" || phase === "zipping";
 
   return (
-    <div className="container">
-      <div>
-        <h2>필터링된 스레드를 폴더와 텍스트로 아카이브해요</h2>
-        <h1>이매지너리 🧩</h1>
-      </div>
+    <>
+      <GlobalStyle />
+      <Container>
+        {phase !== "done" && (
+          <Header>
+            <Subtitle>필터링된 스레드를 폴더와 텍스트로 아카이브해요</Subtitle>
+            <Title>이매지너리 🧩</Title>
+          </Header>
+        )}
 
-      {isIdle && (
-        <>
-          <DropZone
-            onFiles={setPendingFiles}
-            files={pendingFiles}
-            username={manualUsername}
-            onUsernameChange={setManualUsername}
-          />
-          <FilterPanel options={filterOptions} onChange={setFilterOptions} />
-          <button className="start-btn" disabled={!canStart} onClick={handleStart}>
-            아카이브 시작
-          </button>
-          <HowToUse />
-        </>
-      )}
+        {isIdle && (
+          <>
+            <DropZone
+              onFiles={handleFiles}
+              files={pendingFiles}
+              username={username}
+              usernameReadOnly={usernameReadOnly}
+              onUsernameChange={setUsername}
+            />
+            <FilterPanel options={filterOptions} onChange={setFilterOptions} />
+            <PrimaryButton disabled={!canStart} onClick={handleStart}>
+              아카이브 시작
+            </PrimaryButton>
+            <HowToUse />
+          </>
+        )}
 
-      {isIdle && phase === "error" && <div className="error-box">{errorMsg}</div>}
+        {isIdle && phase === "error" && <ErrorBox>{errorMsg}</ErrorBox>}
 
-      {isProcessing && <ProgressBar label={progressLabel} progress={progress} />}
+        {isProcessing && <ProgressBar label={progressLabel} progress={progress} />}
 
-      {phase === "done" && stats && (
-        <>
-          <StatsPanel
-            totalCount={stats.totalCount}
-            rootCount={stats.rootCount}
-            threadCount={stats.threadCount}
-          />
-          <button className="download-btn" onClick={handleDownload}>
-            tweets_archive.zip 다운로드
-          </button>
-          <button className="reset-btn" onClick={reset}>
-            다시 처음으로
-          </button>
-        </>
-      )}
-    </div>
+        {phase === "done" && stats && (
+          <>
+            <Header>
+              <Subtitle>플레이어 원 준, 플레이어 투 @{username}</Subtitle>
+              <Title>시스템 레디!</Title>
+            </Header>
+
+            <StatsPanel
+              totalCount={stats.totalCount}
+              rootCount={stats.rootCount}
+              threadCount={stats.threadCount}
+            />
+            <DownloadButton onClick={handleDownload}>tweets_archive.zip 다운로드</DownloadButton>
+            <ResetButton onClick={reset}>다시 처음으로</ResetButton>
+          </>
+        )}
+      </Container>
+    </>
   );
 }
 

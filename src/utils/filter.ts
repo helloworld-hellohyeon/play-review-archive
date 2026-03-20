@@ -25,7 +25,7 @@ export function extractUsername(data: RawItem[]): string | null {
   const counts: Record<string, number> = {};
   for (const item of data) {
     const tweet = item.tweet;
-    for (const m of tweet.entities?.media ?? []) {
+    for (const m of tweet.extended_entities?.media ?? tweet.entities?.media ?? []) {
       const url = m.expanded_url ?? "";
       const match = url.match(/(?:twitter|x)\.com\/([^/]+)\/status\//);
       if (match) {
@@ -58,7 +58,7 @@ function extractFields(
   username: string,
   includeUrl = false,
 ): ThreadTweet | FilteredTweet {
-  const mediaUrls = (tweet.entities?.media ?? []).map((m) => m.media_url_https);
+  const mediaUrls = (tweet.extended_entities?.media ?? tweet.entities?.media ?? []).map((m) => m.media_url_https);
   const base: ThreadTweet = {
     full_text: tweet.full_text,
     created_at: tweet.created_at,
@@ -123,7 +123,7 @@ export async function filterTweets(
     }
   }
 
-  const hasMedia = (tweet: RawTweet) => (tweet.entities?.media?.length ?? 0) > 0;
+  const hasMedia = (tweet: RawTweet) => ((tweet.extended_entities?.media ?? tweet.entities?.media)?.length ?? 0) > 0;
 
   // root IDs — protectedRoots: matched by condition 1 or 3 (no thread-count limit)
   const rootIds = new Set<string>();

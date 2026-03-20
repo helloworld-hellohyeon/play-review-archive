@@ -14,6 +14,7 @@ export interface RawTweet {
   in_reply_to_status_id?: string;
   in_reply_to_screen_name?: string;
   entities?: TweetEntity;
+  extended_entities?: TweetEntity;
 }
 
 export interface RawItem {
