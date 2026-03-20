@@ -18,13 +18,21 @@ const Panel = styled.div`
   gap: 0.65rem;
 `;
 
-const Title = styled.p`
-  font-size: ${theme.fontSizes.xs};
-  font-weight: 600;
+const Field = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+`;
+
+const FieldLabel = styled.label`
+  font-size: ${theme.fontSizes.base};
+  color: ${theme.colors.textMuted};
+  font-weight: 500;
+`;
+
+const Description = styled.p`
+  font-size: ${theme.fontSizes.xxs};
   color: ${theme.colors.textSubtle};
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.1rem;
 `;
 
 const Row = styled.label`
@@ -76,42 +84,47 @@ export function FilterPanel({ options, onChange }: Props) {
   };
 
   return (
-    <Panel>
-      <Title>필터 조건</Title>
-      <Row>
-        <Checkbox
-          type="checkbox"
-          checked={options.datePrefix}
-          onChange={(e) => set({ datePrefix: e.target.checked })}
-        />
-        <span>날짜(yyMMdd)로 시작하는 트윗</span>
-      </Row>
-      <Row>
-        <Checkbox
-          type="checkbox"
-          checked={options.photoWithThread}
-          onChange={(e) => set({ photoWithThread: e.target.checked })}
-        />
-        <span>사진 있고 스레드 2개 이상</span>
-      </Row>
-      <div>
+    <Field>
+      <FieldLabel>필터 조건</FieldLabel>
+      <Description>
+        OR 조건으로 적용되기 때문에 체크된 조건이 많을 수록 시간이 오래 걸려요
+      </Description>
+      <Panel>
         <Row>
           <Checkbox
             type="checkbox"
-            checked={keywordEnabled}
-            onChange={(e) => handleKeywordCheck(e.target.checked)}
+            checked={options.datePrefix}
+            onChange={(e) => set({ datePrefix: e.target.checked })}
           />
-          <span>키워드/해시태그 포함</span>
+          <span>날짜(yyMMdd)로 시작하는 트윗</span>
         </Row>
-        {keywordEnabled && (
-          <KeywordInput
-            type="text"
-            placeholder="키워드 입력"
-            value={options.keyword}
-            onChange={(e) => set({ keyword: e.target.value })}
+        <Row>
+          <Checkbox
+            type="checkbox"
+            checked={options.photoWithThread}
+            onChange={(e) => set({ photoWithThread: e.target.checked })}
           />
-        )}
-      </div>
-    </Panel>
+          <span>사진 있고 스레드 2개 이상</span>
+        </Row>
+        <div>
+          <Row>
+            <Checkbox
+              type="checkbox"
+              checked={keywordEnabled}
+              onChange={(e) => handleKeywordCheck(e.target.checked)}
+            />
+            <span>키워드/해시태그 포함</span>
+          </Row>
+          {keywordEnabled && (
+            <KeywordInput
+              type="text"
+              placeholder="키워드 입력"
+              value={options.keyword}
+              onChange={(e) => set({ keyword: e.target.value })}
+            />
+          )}
+        </div>
+      </Panel>
+    </Field>
   );
 }

@@ -22,6 +22,7 @@ export const theme = {
     full: "999px",
   },
   fontSizes: {
+    xxs: "0.6rem",
     xs: "0.75rem",
     sm: "0.78rem",
     base: "0.8rem",
