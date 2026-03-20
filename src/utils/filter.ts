@@ -13,9 +13,9 @@ export function isYymmddPrefix(text: string): boolean {
 
 export function loadJsOrJson(raw: string, filename: string): RawItem[] {
   if (filename.endsWith(".js")) {
-    const match = raw.match(/=\s*(\[[\s\S]*\])\s*$/);
-    if (!match) throw new Error("JS 파일에서 배열을 찾을 수 없습니다.");
-    return JSON.parse(match[1]) as RawItem[];
+    const start = raw.indexOf("[");
+    if (start === -1) throw new Error("JS 파일에서 배열을 찾을 수 없습니다.");
+    return JSON.parse(raw.slice(start)) as RawItem[];
   }
   return JSON.parse(raw) as RawItem[];
 }

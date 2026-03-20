@@ -42,17 +42,22 @@ export async function buildZip(
         txtEntry.push(strToU8(buildTxt(tweet)), true);
 
         // 이미지 (이미 압축된 포맷이므로 저장만)
+        const seen = new Set<string>();
         const mediaUrls = [...tweet.media_urls, ...tweet.threads.flatMap((t) => t.media_urls)].filter(
-          (v, idx, a) => a.indexOf(v) === idx,
+          (v) => { if (seen.has(v)) return false; seen.add(v); return true; },
         );
 
-        for (let idx = 0; idx < mediaUrls.length; idx++) {
-          const data = await fetchImage(mediaUrls[idx]);
-          if (data) {
-            const imgEntry = new ZipPassThrough(`${folderName}/${imageFilename(mediaUrls[idx], idx)}`);
-            zipStream.add(imgEntry);
-            imgEntry.push(data, true);
-            // data는 스트림에 쓰인 후 GC 가능
+        const CONCURRENCY = 2;
+        for (let idx = 0; idx < mediaUrls.length; idx += CONCURRENCY) {
+          const batch = mediaUrls.slice(idx, idx + CONCURRENCY);
+          const results = await Promise.all(batch.map((url) => fetchImage(url)));
+          for (let bi = 0; bi < batch.length; bi++) {
+            const data = results[bi];
+            if (data) {
+              const imgEntry = new ZipPassThrough(`${folderName}/${imageFilename(batch[bi], idx + bi)}`);
+              zipStream.add(imgEntry);
+              imgEntry.push(data, true);
+            }
           }
         }
 
