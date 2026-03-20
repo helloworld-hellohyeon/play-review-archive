@@ -100,8 +100,16 @@ export async function filterTweets(
   options: FilterOptions,
   onProgress: (ratio: number) => void,
 ): Promise<FilterResult> {
-  const idToItem = new Map<string, RawItem>();
+  const deduped = new Map<string, RawItem>();
   for (const item of data) {
+    deduped.set(item.tweet.id, item);
+  }
+  const uniqueData = [...deduped.values()].filter(
+    (item) => !item.tweet.full_text.startsWith("RT @"),
+  );
+
+  const idToItem = new Map<string, RawItem>();
+  for (const item of uniqueData) {
     idToItem.set(item.tweet.id, item);
   }
 
@@ -141,7 +149,7 @@ export async function filterTweets(
     }
     i++;
     if (i % YIELD_INTERVAL === 0) {
-      onProgress((i / data.length) * 0.5);
+      onProgress((i / uniqueData.length) * 0.5);
       await new Promise((r) => setTimeout(r, 0));
     }
   }
@@ -174,7 +182,7 @@ export async function filterTweets(
 
   return {
     result,
-    totalCount: data.length,
+    totalCount: uniqueData.length,
     rootCount: rootIds.size,
     threadCount: totalThreadCount,
     username,

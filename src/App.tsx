@@ -18,7 +18,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState("");
   const [stats, setStats] = useState<FilterResult | null>(null);
   const [manualUsername, setManualUsername] = useState("");
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
     datePrefix: true,
     photoWithThread: true,
@@ -28,10 +28,10 @@ export default function App() {
 
   const hasFilterCondition =
     filterOptions.datePrefix || filterOptions.photoWithThread || filterOptions.keyword !== "";
-  const canStart = pendingFile !== null && manualUsername.trim() !== "" && hasFilterCondition;
+  const canStart = pendingFiles.length > 0 && manualUsername.trim() !== "" && hasFilterCondition;
 
   const processFile = useCallback(
-    async (file: File) => {
+    async (files: File[]) => {
       setPhase("filtering");
       setProgress(0);
       setProgressLabel("파일 읽는 중...");
@@ -39,17 +39,25 @@ export default function App() {
       setStats(null);
 
       try {
-        const raw = await file.text();
+        const allData = [];
+        for (let fi = 0; fi < files.length; fi++) {
+          const file = files[fi];
+          setProgressLabel(`파일 읽는 중... (${fi + 1} / ${files.length})`);
+          await tick();
+          const raw = await file.text();
+          let parsed;
+          try {
+            parsed = loadJsOrJson(raw, file.name);
+          } catch (e) {
+            throw new Error(`${file.name} 파싱 실패: ` + (e as Error).message);
+          }
+          allData.push(...parsed);
+        }
+        const data = allData;
+
         setProgress(0.05);
         setProgressLabel("파싱 중...");
         await tick();
-
-        let data;
-        try {
-          data = loadJsOrJson(raw, file.name);
-        } catch (e) {
-          throw new Error("파일 파싱 실패: " + (e as Error).message);
-        }
 
         if (!Array.isArray(data) || data.length === 0) {
           throw new Error("유효한 트윗 배열을 찾을 수 없습니다.");
@@ -99,7 +107,7 @@ export default function App() {
   );
 
   const handleStart = () => {
-    if (pendingFile && canStart) processFile(pendingFile);
+    if (pendingFiles.length > 0 && canStart) processFile(pendingFiles);
   };
 
   const handleDownload = () => {
@@ -122,7 +130,7 @@ export default function App() {
     setProgress(0);
     setErrorMsg("");
     setManualUsername("");
-    setPendingFile(null);
+    setPendingFiles([]);
   };
 
   const isIdle = phase === "idle" || phase === "error";
@@ -138,8 +146,8 @@ export default function App() {
       {isIdle && (
         <>
           <DropZone
-            onFile={setPendingFile}
-            file={pendingFile}
+            onFiles={setPendingFiles}
+            files={pendingFiles}
             username={manualUsername}
             onUsernameChange={setManualUsername}
           />
