@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import type { ExtractedThread, ExtractResponse, LoadProgressMessage } from "./types";
+import type {
+  ArchiveOptions,
+  ExtractedThread,
+  ExtractResponse,
+  LoadProgressMessage,
+} from "./types";
 import { buildZip } from "./archive";
 import "./popup.css";
 
@@ -16,6 +21,10 @@ export default function Popup() {
   const [progress, setProgress] = useState(0);
   const [loadedCount, setLoadedCount] = useState(0);
   const [errorMsg, setErrorMsg] = useState("");
+  const [options, setOptions] = useState<ArchiveOptions>({
+    includeImages: true,
+    includeAuthor: false,
+  });
 
   useEffect(() => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -38,51 +47,74 @@ export default function Popup() {
     return () => chrome.runtime.onMessage.removeListener(listener);
   }, []);
 
+  async function sendExtract(tabId: number): Promise<ExtractResponse> {
+    return new Promise((resolve) => {
+      chrome.tabs.sendMessage(
+        tabId,
+        { type: "EXTRACT_THREAD" },
+        (response: ExtractResponse | undefined) => {
+          if (chrome.runtime.lastError || !response) {
+            resolve({
+              ok: false,
+              error: chrome.runtime.lastError?.message ?? "콘텐츠 스크립트 응답 없음",
+            });
+          } else {
+            resolve(response);
+          }
+        },
+      );
+    });
+  }
+
   async function handleExtract() {
     if (tabId === null) return;
     setPhase("extracting");
     setLoadedCount(0);
 
-    chrome.tabs.sendMessage(
-      tabId,
-      { type: "EXTRACT_THREAD" },
-      async (response: ExtractResponse | undefined) => {
-        if (chrome.runtime.lastError || !response) {
-          setErrorMsg(chrome.runtime.lastError?.message ?? "콘텐츠 스크립트 응답 없음");
-          setPhase("error");
-          return;
-        }
-        if (!response.ok) {
-          setErrorMsg(response.error);
-          setPhase("error");
-          return;
-        }
+    // content script가 없는 탭(익스텐션 설치 전 열린 탭)에 직접 주입
+    try {
+      await chrome.scripting.executeScript({ target: { tabId }, files: ["content.js"] });
+    } catch {
+      // 이미 주입돼 있거나 권한 없는 경우 무시
+    }
 
-        const extracted = response.thread;
-        setThread(extracted);
-        setPhase("building");
-        setProgress(0);
+    let response = await sendExtract(tabId);
 
-        try {
-          const blob = await buildZip(extracted, (r) => setProgress(r));
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          const safeName =
-            extracted.rootTweet.text
-              .slice(0, 20)
-              .replace(/[/\\:*?"<>|]/g, "")
-              .trim() || extracted.rootTweet.tweetId;
-          a.download = `${safeName}.zip`;
-          a.click();
-          URL.revokeObjectURL(url);
-          setPhase("done");
-        } catch (e) {
-          setErrorMsg(String(e));
-          setPhase("error");
-        }
-      },
-    );
+    // 주입 직후라 아직 리스너가 없을 수 있으므로 한 번 재시도
+    if (!response.ok && response.error?.includes("Could not establish connection")) {
+      await new Promise((r) => setTimeout(r, 300));
+      response = await sendExtract(tabId);
+    }
+
+    if (!response.ok) {
+      setErrorMsg(response.error);
+      setPhase("error");
+      return;
+    }
+
+    const extracted = response.thread;
+    setThread(extracted);
+    setPhase("building");
+    setProgress(0);
+
+    try {
+      const blob = await buildZip(extracted, options, (r) => setProgress(r));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeName =
+        extracted.rootTweet.text
+          .slice(0, 20)
+          .replace(/[/\\:*?"<>|]/g, "")
+          .trim() || extracted.rootTweet.tweetId;
+      a.download = `${safeName}.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      setPhase("done");
+    } catch (e) {
+      setErrorMsg(String(e));
+      setPhase("error");
+    }
   }
 
   const totalTweets = thread ? 1 + thread.replies.length : 0;
@@ -103,7 +135,28 @@ export default function Popup() {
 
         {phase === "ready" && (
           <>
-            <p className="status-message">스레드를 ZIP으로 추출합니다.</p>
+            <p className="status-message">화면에 보여지는 정보들만 가져올 수 있어요.</p>
+            <p className="status-message">
+              실행되는 동안은 페이지를 벗어나거나 새로고침 하지 마세요.
+            </p>
+            <div className="options">
+              <label className="option-item">
+                <input
+                  type="checkbox"
+                  checked={options.includeImages}
+                  onChange={(e) => setOptions((o) => ({ ...o, includeImages: e.target.checked }))}
+                />
+                <span>스레드의 모든 사진 포함</span>
+              </label>
+              <label className="option-item">
+                <input
+                  type="checkbox"
+                  checked={options.includeAuthor}
+                  onChange={(e) => setOptions((o) => ({ ...o, includeAuthor: e.target.checked }))}
+                />
+                <span>작성자 아이디 포함</span>
+              </label>
+            </div>
             <button className="btn btn-primary" onClick={handleExtract}>
               스레드 추출
             </button>

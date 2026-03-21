@@ -10,12 +10,14 @@ interface Props {
   onStart: (files: File[], username: string, filterOptions: FilterOptions) => void;
   errorMsg?: string;
   initialFilterOptions?: FilterOptions;
+  initialFiles?: File[];
+  initialUsername?: string;
 }
 
-export function Intro({ onStart, errorMsg, initialFilterOptions }: Props) {
-  const [files, setFiles] = useState<File[]>([]);
-  const [username, setUsername] = useState("");
-  const [usernameReadOnly, setUsernameReadOnly] = useState(false);
+export function Intro({ onStart, errorMsg, initialFilterOptions, initialFiles, initialUsername }: Props) {
+  const [files, setFiles] = useState<File[]>(initialFiles ?? []);
+  const [username, setUsername] = useState(initialUsername ?? "");
+  const [usernameReadOnly, setUsernameReadOnly] = useState(!!initialUsername);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>(
     initialFilterOptions ?? { datePrefix: true, photoWithThread: true, keyword: "" },
   );

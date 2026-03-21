@@ -21,6 +21,11 @@ export interface LoadProgressMessage {
   loaded: number;
 }
 
+export interface ArchiveOptions {
+  includeImages: boolean;
+  includeAuthor: boolean;
+}
+
 export interface ExtractResponseOk {
   ok: true;
   thread: ExtractedThread;
