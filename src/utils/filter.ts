@@ -9,8 +9,18 @@ import type {
 
 export function isYymmddPrefix(text: string): boolean {
   const sep = "[./\\-]?";
-  // yyMMdd or yyyyMMdd, with optional separator between each part
-  return new RegExp(`^(\\d{4}|\\d{2})${sep}(0[1-9]|1[0-2])${sep}(0[1-9]|[12]\\d|3[01])`).test(text);
+  const m = new RegExp(
+    `^(\\d{4}|\\d{2})${sep}(0[1-9]|1[0-2])${sep}(0[1-9]|[12]\\d|3[01])`,
+  ).exec(text);
+  if (!m) return false;
+
+  const yr = m[1].length === 4 ? parseInt(m[1], 10) : 2000 + parseInt(m[1], 10);
+  const mo = parseInt(m[2], 10);
+  const dy = parseInt(m[3], 10);
+
+  // Date 롤오버로 존재하지 않는 날짜(2월 30일, 4월 31일 등) 제거
+  const d = new Date(yr, mo - 1, dy);
+  return d.getFullYear() === yr && d.getMonth() === mo - 1 && d.getDate() === dy;
 }
 
 export function loadJsOrJson(raw: string, filename: string): RawItem[] {

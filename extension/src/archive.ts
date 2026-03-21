@@ -1,10 +1,11 @@
 import { Zip, ZipDeflate, ZipPassThrough, strToU8 } from "fflate";
-import type { ExtractedThread } from "./types";
+import type { ArchiveOptions, ExtractedThread } from "./types";
 import { buildThreadTxt } from "./format";
 import { fetchImage, imageFilename } from "./imageUtils";
 
 function toFolderName(text: string, fallback: string): string {
   const sanitized = text
+    .replace(/https?:\/\/\S+/g, "")   // URL 제거
     .replace(/[/\\:*?"<>|]/g, "")
     .replace(/\s+/g, " ")
     .trim();
@@ -45,6 +46,7 @@ async function fetchAllImages(
 
 export async function buildZip(
   thread: ExtractedThread,
+  options: ArchiveOptions,
   onProgress?: (ratio: number) => void,
 ): Promise<Blob> {
   const chunks: Uint8Array[] = [];
@@ -63,29 +65,34 @@ export async function buildZip(
       // tweets.txt
       const txtEntry = new ZipDeflate(`${folderName}/tweets.txt`, { level: 6 });
       zipStream.add(txtEntry);
-      txtEntry.push(strToU8(buildThreadTxt(thread)), true);
+      txtEntry.push(strToU8(buildThreadTxt(thread, options)), true);
 
-      // 미디어 URL 수집 (중복 제거)
-      const seen = new Set<string>();
-      const allMedia: string[] = [];
-      for (const url of [rootTweet, ...replies].flatMap((t) => t.mediaUrls)) {
-        if (!seen.has(url)) { seen.add(url); allMedia.push(url); }
-      }
-
-      if (allMedia.length === 0) {
+      // 이미지 포함 옵션이 꺼져 있으면 바로 완료
+      if (!options.includeImages) {
         onProgress?.(1);
       } else {
-        // 워커 풀로 전체 이미지 동시 fetch
-        const imageData = await fetchAllImages(allMedia, 6, (done, total) => {
-          onProgress?.(done / total);
-        });
+        // 미디어 URL 수집 (중복 제거)
+        const seen = new Set<string>();
+        const allMedia: string[] = [];
+        for (const url of [rootTweet, ...replies].flatMap((t) => t.mediaUrls)) {
+          if (!seen.has(url)) { seen.add(url); allMedia.push(url); }
+        }
 
-        for (let i = 0; i < allMedia.length; i++) {
-          const data = imageData[i];
-          if (data) {
-            const imgEntry = new ZipPassThrough(`${folderName}/${imageFilename(allMedia[i], i)}`);
-            zipStream.add(imgEntry);
-            imgEntry.push(data, true);
+        if (allMedia.length === 0) {
+          onProgress?.(1);
+        } else {
+          // 워커 풀로 전체 이미지 동시 fetch
+          const imageData = await fetchAllImages(allMedia, 6, (done, total) => {
+            onProgress?.(done / total);
+          });
+
+          for (let i = 0; i < allMedia.length; i++) {
+            const data = imageData[i];
+            if (data) {
+              const imgEntry = new ZipPassThrough(`${folderName}/${imageFilename(allMedia[i], i)}`);
+              zipStream.add(imgEntry);
+              imgEntry.push(data, true);
+            }
           }
         }
       }

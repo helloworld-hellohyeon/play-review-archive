@@ -1,8 +1,18 @@
 import { useState } from "react";
+import styled from "@emotion/styled";
 import type { FilterOptions, FilterResult } from "./types";
 import { GlobalStyle } from "./styles/GlobalStyle";
 import { Container } from "./components/Layout";
 import { Footer } from "./components/Footer";
+
+const Main = styled.main`
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+`;
 import { Intro } from "./components/steps/Intro";
 import { Processing } from "./components/steps/Processing";
 import { Review } from "./components/steps/Review";
@@ -41,7 +51,6 @@ export default function App() {
   };
 
   const handleReset = () => {
-    setIntroData(null);
     setFilterResult(null);
     setErrorMsg("");
     setPhase("idle");
@@ -50,30 +59,34 @@ export default function App() {
   return (
     <>
       <GlobalStyle />
+      <Main>
+        <Container>
+          {(phase === "idle" || phase === "error") && (
+            <Intro
+              onStart={handleStart}
+              errorMsg={errorMsg}
+              initialFilterOptions={lastFilterOptions ?? undefined}
+              initialFiles={introData?.files}
+              initialUsername={introData?.username}
+            />
+          )}
+
+          {phase === "processing" && introData && (
+            <Processing
+              files={introData.files}
+              username={introData.username}
+              filterOptions={introData.filterOptions}
+              onDone={handleDone}
+              onError={handleError}
+            />
+          )}
+
+          {phase === "review" && filterResult && introData && (
+            <Review stats={filterResult} username={introData.username} onReset={handleReset} />
+          )}
+        </Container>
+      </Main>
       <Footer />
-      <Container>
-        {(phase === "idle" || phase === "error") && (
-          <Intro onStart={handleStart} errorMsg={errorMsg} initialFilterOptions={lastFilterOptions ?? undefined} />
-        )}
-
-        {phase === "processing" && introData && (
-          <Processing
-            files={introData.files}
-            username={introData.username}
-            filterOptions={introData.filterOptions}
-            onDone={handleDone}
-            onError={handleError}
-          />
-        )}
-
-        {phase === "review" && filterResult && introData && (
-          <Review
-            stats={filterResult}
-            username={introData.username}
-            onReset={handleReset}
-          />
-        )}
-      </Container>
     </>
   );
 }

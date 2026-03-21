@@ -32,18 +32,18 @@ export function GlobalStyle() {
           color: ${theme.colors.text};
           min-height: 100vh;
           display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 2rem;
+          flex-direction: column;
           scrollbar-gutter: stable;
           -ms-overflow-style: none;
           scrollbar-width: none;
         }
 
         #root {
+          flex: 1;
           width: 100%;
           display: flex;
-          justify-content: center;
+          flex-direction: column;
+          align-items: center;
         }
       `}
     />
