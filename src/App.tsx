@@ -6,6 +6,7 @@ import { Footer } from "./components/Footer";
 import { Intro } from "./components/steps/Intro";
 import { Processing } from "./components/steps/Processing";
 import { Review } from "./components/steps/Review";
+import { PrivacyPolicy } from "./components/PrivacyPolicy";
 
 type Phase = "idle" | "processing" | "review" | "error";
 
@@ -46,6 +47,15 @@ export default function App() {
     setErrorMsg("");
     setPhase("idle");
   };
+
+  if (window.location.pathname === "/privacy-policy") {
+    return (
+      <>
+        <GlobalStyle />
+        <PrivacyPolicy />
+      </>
+    );
+  }
 
   return (
     <>
