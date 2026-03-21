@@ -1,4 +1,4 @@
-import type { ExtractedThread } from "./types";
+import type { ArchiveOptions, ExtractedThread } from "./types";
 
 /** ISO 날짜 문자열 → "2026-01-01 00:00:00" */
 export function formatDate(createdAt: string): string {
@@ -11,14 +11,25 @@ export function formatDate(createdAt: string): string {
   );
 }
 
-export function buildThreadTxt(thread: ExtractedThread): string {
+const SEP = "=".repeat(30);
+
+export function buildThreadTxt(thread: ExtractedThread, options: Pick<ArchiveOptions, "includeAuthor">): string {
   const lines: string[] = [];
 
-  lines.push(thread.rootTweet.text);
+  // 헤더
+  lines.push(SEP);
+  lines.push(formatDate(thread.rootTweet.createdAt));
+  lines.push(thread.rootTweet.tweetUrl);
+  lines.push(SEP);
+  lines.push("");
 
-  for (const reply of thread.replies) {
-    lines.push("");
-    lines.push(reply.text);
+  // 본문
+  const all = [thread.rootTweet, ...thread.replies];
+  for (let i = 0; i < all.length; i++) {
+    const tweet = all[i];
+    if (i > 0) lines.push("");
+    if (options.includeAuthor) lines.push(`@${tweet.username}`);
+    lines.push(tweet.text);
   }
 
   return lines.join("\n");
