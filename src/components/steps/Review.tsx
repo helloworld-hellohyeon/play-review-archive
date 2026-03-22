@@ -76,7 +76,9 @@ const OpenButton = styled.button`
   color: ${theme.colors.textMuted};
   font-size: ${theme.fontSizes.xs};
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 
   &:hover {
     color: ${theme.colors.text};
@@ -137,7 +139,9 @@ const ToggleButton = styled.button`
   padding: 0.3rem 0.75rem;
   cursor: pointer;
   align-self: flex-start;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 
   &:hover {
     color: ${theme.colors.text};
@@ -168,28 +172,31 @@ interface RowProps {
 
 const TweetItem = memo(function TweetItem({ tweet, checked, onToggle }: RowProps) {
   const clean = stripTrailingUrl(tweet.full_text);
-  const totalMedia = tweet.media_urls.length + tweet.threads.reduce((s, t) => s + t.media_urls.length, 0);
+  const totalMedia =
+    tweet.media_urls.length + tweet.threads.reduce((s, t) => s + t.media_urls.length, 0);
+  const thumbnail = tweet.media_urls?.[0];
+
   return (
     <TweetRow>
-      <Checkbox
-        type="checkbox"
-        checked={checked}
-        onChange={() => onToggle(tweet.url)}
-      />
+      <Checkbox type="checkbox" checked={checked} onChange={() => onToggle(tweet.url)} />
       {tweet.media_urls.length > 0 && (
         <ImageStrip>
-          {tweet.media_urls.map((src, i) => (
-            <Thumb
-              key={i}
-              src={src.includes("pbs.twimg.com") ? `${src}${src.includes("?") ? "&" : "?"}name=small` : src}
-              alt=""
-              loading="lazy"
-            />
-          ))}
+          <Thumb
+            src={
+              thumbnail.includes("pbs.twimg.com")
+                ? `${thumbnail}${thumbnail.includes("?") ? "&" : "?"}name=small`
+                : thumbnail
+            }
+            alt=""
+            loading="lazy"
+          />
         </ImageStrip>
       )}
       <TweetInfo>
-        <TweetText>{clean.slice(0, 50)}{clean.length > 50 ? "…" : ""}</TweetText>
+        <TweetText>
+          {clean.slice(0, 50)}
+          {clean.length > 50 ? "…" : ""}
+        </TweetText>
         <TweetMeta>
           <MetaDate>{formatDate(tweet.created_at)}</MetaDate>
           {tweet.threads.length > 0 && <Badge>스레드 {tweet.threads.length}</Badge>}
@@ -197,7 +204,10 @@ const TweetItem = memo(function TweetItem({ tweet, checked, onToggle }: RowProps
         </TweetMeta>
       </TweetInfo>
       <OpenButton
-        onClick={(e) => { e.preventDefault(); window.open(tweet.url, "_blank", "noopener,noreferrer"); }}
+        onClick={(e) => {
+          e.preventDefault();
+          window.open(tweet.url, "_blank", "noopener,noreferrer");
+        }}
       >
         열기
       </OpenButton>
@@ -288,9 +298,7 @@ export function Review({ stats, username, onReset }: Props) {
         selectedCount={selected.size}
       />
 
-      <ToggleButton onClick={toggleAll}>
-        {allSelected ? "전체 해제" : "전체 선택"}
-      </ToggleButton>
+      <ToggleButton onClick={toggleAll}>{allSelected ? "전체 해제" : "전체 선택"}</ToggleButton>
 
       <ListWrapper>
         {tweets.map((tweet) => (
@@ -307,9 +315,7 @@ export function Review({ stats, username, onReset }: Props) {
         {isBuilding ? "ZIP 생성 중..." : `선택한 ${selected.size}개 다운로드`}
       </PrimaryButton>
 
-      <ResetButton onClick={onReset}>
-        다시 처음으로
-      </ResetButton>
+      <ResetButton onClick={onReset}>다시 처음으로</ResetButton>
     </>
   );
 }
