@@ -14,7 +14,13 @@ interface Props {
   initialUsername?: string;
 }
 
-export function Intro({ onStart, errorMsg, initialFilterOptions, initialFiles, initialUsername }: Props) {
+export function Intro({
+  onStart,
+  errorMsg,
+  initialFilterOptions,
+  initialFiles,
+  initialUsername,
+}: Props) {
   const [files, setFiles] = useState<File[]>(initialFiles ?? []);
   const [username, setUsername] = useState(initialUsername ?? "");
   const [usernameReadOnly, setUsernameReadOnly] = useState(!!initialUsername);
