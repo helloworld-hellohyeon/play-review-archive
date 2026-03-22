@@ -55,7 +55,6 @@ const Sub = styled.span`
   color: ${theme.colors.textSubtle};
 `;
 
-
 export function HowToUse() {
   const [open, setOpen] = useState(false);
 
