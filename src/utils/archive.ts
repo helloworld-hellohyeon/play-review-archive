@@ -22,7 +22,10 @@ export async function buildZip(
 
   await new Promise<void>((resolve, reject) => {
     const zipStream = new Zip((err, data, final) => {
-      if (err) { reject(err); return; }
+      if (err) {
+        reject(err);
+        return;
+      }
       chunks.push(data);
       if (final) resolve();
     });
@@ -43,9 +46,14 @@ export async function buildZip(
 
         // 이미지 (이미 압축된 포맷이므로 저장만)
         const seen = new Set<string>();
-        const mediaUrls = [...tweet.media_urls, ...tweet.threads.flatMap((t) => t.media_urls)].filter(
-          (v) => { if (seen.has(v)) return false; seen.add(v); return true; },
-        );
+        const mediaUrls = [
+          ...tweet.media_urls,
+          ...tweet.threads.flatMap((t) => t.media_urls),
+        ].filter((v) => {
+          if (seen.has(v)) return false;
+          seen.add(v);
+          return true;
+        });
 
         const CONCURRENCY = 2;
         for (let idx = 0; idx < mediaUrls.length; idx += CONCURRENCY) {
@@ -54,7 +62,9 @@ export async function buildZip(
           for (let bi = 0; bi < batch.length; bi++) {
             const data = results[bi];
             if (data) {
-              const imgEntry = new ZipPassThrough(`${folderName}/${imageFilename(batch[bi], idx + bi)}`);
+              const imgEntry = new ZipPassThrough(
+                `${folderName}/${imageFilename(batch[bi], idx + bi)}`,
+              );
               zipStream.add(imgEntry);
               imgEntry.push(data, true);
             }

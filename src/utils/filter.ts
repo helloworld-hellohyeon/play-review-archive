@@ -9,9 +9,9 @@ import type {
 
 export function isYymmddPrefix(text: string): boolean {
   const sep = "[./\\-]?";
-  const m = new RegExp(
-    `^(\\d{4}|\\d{2})${sep}(0[1-9]|1[0-2])${sep}(0[1-9]|[12]\\d|3[01])`,
-  ).exec(text);
+  const m = new RegExp(`^(\\d{4}|\\d{2})${sep}(0[1-9]|1[0-2])${sep}(0[1-9]|[12]\\d|3[01])`).exec(
+    text,
+  );
   if (!m) return false;
 
   const yr = m[1].length === 4 ? parseInt(m[1], 10) : 2000 + parseInt(m[1], 10);
